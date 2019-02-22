@@ -1,0 +1,215 @@
+---------------------------------------------------------------------
+                        TEMA 2 - IOCLA
+---------------------------------------------------------------------
+
+Autor: Smadu Razvan-Alexandru  325CB
+
+Fisiere incluse:
+  - tema2.asm
+  - Makefile
+  - README
+
+README
+  Nota: "Variabila de adresa" se va referi la [ebp - 2304] care retine adresa
+        curenta la care s-a ajuns in input.
+
+  Task-ul 1
+    Pentru rezolvarea acestui task si pentru task-urile urmatoare, adresa 
+    curenta a stringului se retine in [ebp - 2304]. Se retine adresa stringului
+    1 pentru a creste viteza de calculare a adresei stringului 2, in registrul 
+    ecx. In ebx se retine adresa stringului 1, iar in edx se calculeaza adresa
+    stringului 2. In eax se calculeaza pozitia relativa a stringului 2 
+    fata de 1 ca fiind lungimea_sirului_1 + 1 (lungimea terminatorului 
+    de string). Apoi se adauga la edx, valoare obtinuta din eax si se obtine 
+    astfel adresa stringului 2. Se retine eax in stiva pentru exercitiul 
+    urmator si se realizeaza xor intre cele 2 stringuri prin apelarea functiei
+    xor_strings(char *src, char* dest). Aceasta functie face xor, caracter
+    cu caracter pana cand se da de caracterul '\0'. Aceasta este posibila
+    datorita proprietatii operatiei xor ((x + y) + y = x). Apoi se afiseaza 
+    rezultatul obtinut.
+
+  Task-ul 2
+    La acest task, se extrage valoarea retinuta pe stiva la exercitiul anterior,
+    se inmulteste cu 2 (adica shiftare la stanga cu o pozitie) pentru ca sunt
+    doua stringuri si se adauga la variabila de adresa, indicand astfel catre
+    stringul 3 pentru acest task. Se aplica functia rolling_xor(char *src) ce
+    realizeaza xor intre caracterele stringului.
+    
+    Scurta teorie:
+    Fie mesajul M = m1 m2 ... mn, cu n > 1, iar mi = caracter; si codificarea
+    acestuia C = enc(M) = c1 c2 ... cn, 
+            unde c1 = m1
+                 c2 = m2 + c1 = m2 + m1
+                 c3 = m3 + c2 = m3 + m2 + m1
+                 ...
+                 cn = mn + cn-1 = mn + mn-1 + ... + m1
+    Prin urmare, aplicand proprietatea XOR x + y + y = x, mesajul M poate fi 
+    scris astfel:
+                 m1 = c1
+                 m2 = c2 + m1
+                 m3 = c3 + c2 = c3 + m2 + m1
+                 ...
+                 mn = cn + mn-1 + ... + m1
+    Ca si consecinta, putem decripta caracterul curent stiind suma (modulo 2 
+    sau XOR) caracterelor decriptate anterior si aceasta insumata (XOR) cu 
+    caracterul criptat curent. 
+   
+    Nota: Semnul '+' este folosit cu sensul de suma modulo 2 sau cu sensul de 
+          XOR (cele doua fiind aproape echivalente) 
+
+    Implementarea in assembly:
+    Registrul eax contine adresa string-ului care trebuie decriptat, ecx este 
+    folosit pentru indexare, iar ebx este folosit pentru a retine sumele 
+    caracterelor anterioare (in comentarii am folosit termenul de 'block',
+    intrucat valoare e retinuta in bl (de la block) si pentru ca practic
+    acei mi pot spune ca formeaza un bloc de caractere). Se pune caracterul
+    curent in dl, se adauga in block si se realizeaza decodificarea 
+    caracterului curent prin insumarea (XOR) cu caracterul urmator. Acesti pasi
+    se realizeaza cat timp caracterul urmator nu este '\0'.
+
+    Functia rolling_xor() returneaza lungimea string-ului, pentru a creste 
+    viteza de rulare a programului (aceasta este posibila deoarece |M| = |C|).
+    Valoare intoarsa este incrementata cu 1 (pentru '\0') si pusa pe stiva.
+
+  Task-ul 3
+    Pentru acest task, se extrage de pe stiva valoarea retinuta anterior si se 
+    calculeaza adresa string-ului 4. Apoi se calculeaza lungimea string-ului 5
+    prin apelul functiei strlen(), se incrementeaza rezultatul, se calculeaza 
+    adresa string-ului 5 si se retin in ebx adresa str4 si in edx adresa str5.
+    Se inmulteste valoarea din eax (rezultatul intors de strlen incrementat) 
+    cu 2 si se adauga la aceasta adresa curenta, pentru a determina adresa
+    string-ului urmator, care este pusa ulterior pe stiva.
+    Se apeleaza functia xor_hex_strings(char *str1, char *str2) care realizeaza
+    conversia din ASCII in hexa si face xor intre string-uri. 
+
+    Functia ASCII_to_binary(char *letter) converteste un character ASCII in 
+    echivalentul sau in hexa (ex. 'A' => '0xA' sau 'a' => '0xA'). Acest lucru
+    se realizeaza prin indentificarea caracterului in Tabelul ASCII si apoi 
+    se scada valoare '0' daca este numar, 'A' si se aduna 0xA daca este 
+    majuscula si 'a' si se aduna 0xA daca este litera mica. 
+
+    Functia short_to_byte realizeaza conversia unui short (2 bytes) intr-un
+    byte (in sensul ca ia doar ultimul nibble din ambii octeti si ii 
+    concateneaza). Exemplu: 0x0A 0x01 => 0xA1. Functia merge doar pe little-
+    endian. Functia lucreaza astfel: se seteaza eax la 0x0; se pune in ax 
+    valoare short-ului; al se shifteaza cu 4; se aduna la ah valoarea din al;
+    se face 0x0 sursa si destinatia; se pune valoarea din al (rezultatul final)
+    in destinatie.
+    
+    Functia decode_ASCII() face conversia in hexa (sau binar) a 2 caractere
+    ASCII in sensul descris mai sus si se converteste short-ul obtinut in 
+    byte. Aceasta functie returneaza urmatorul caracter din sir, modifica 
+    sursa, iar prin efect lateral intoarce pozitia primului 0x0 (intrucat 
+    din 2 bytes, ultimul sigur va fi 0x0). 
+
+    Functia xor_hex_strings() practic realizeaza, la fiecare pas de iteratie,
+    conversia unui short in byte pentru fiecare string si face xor pe 
+    aceste rezultate partiale. In final o sa iasa mesajul decodificat.
+     
+  Task-ul 4
+    La acest task, mai intai se calculeaza adresa string-ului 6 adunand la
+    valoarea de adresa suma lungimilor string-urilor calculata anterior si pusa
+    pe stiva. Se calculeaza lungimea sirului pentru task-ul curent si se pune 
+    pe stiva pentru task-ul urmator.
+
+    Functia base32decode(char *string) realizeaza decodificarea unui sir 
+    codificat in base32. Pentru aceasta se prelucreaza string-ul in grupuri
+    de 8 octeti. 
+
+    Functia ASCII_to_Value_b32() converteste caracterul ASCII in valoarea
+    asociata in base32 (A -> 0x0, B -> 0x1 ... Z -> 0x19, 2 -> 0x1A, ... 
+    7 -> 0x1F, = -> 0x0 la finalul string-ului). Aceasta conversie se 
+    realizeaza prin identificarea caracterului in tabelul ASCII si scaderea
+    aceste valori cu o valoare specifica conform tabelului de transformare 
+    value-encode. 
+
+    Functia decode_40bit_group(char *group, char *address) realizeaza 
+    conversia unui unui grup de 8 octeti (in codificare valoare base32) 
+    in 5 octeti ASCII si 3 octeti 0x0. Parametrul address reprezinta adresa
+    de destinatie a rezultatului. Octetii sunt calculati prin shiftari 
+    si aplicare de masti. 
+
+    Explicatie: 
+    Fie grupul de octeti urmator:
+    00011111 00022222 00033333 00044444 00055555 00066666 00077777 00088888
+    unde cirfele 1-7 reprezinta valori in binar 0 sau 1, grupurile de 5 
+    bits reprezentand numere in baza 32. Functia practic realizeaza conversia
+    unui astfel de sir intr-un sir precum urmatorul:
+    11111222 22333334 44445555 56666677 77788888 00000000 00000000 00000000
+
+    Functia returneaza adresa primului octet 0x0 din sirul generat ca mai sus.
+
+    Functia base32decode() realizeaza conversia folosind functiile descrise
+    mai sus: mai intai decodifica din ASCII in 32 bit value, "sterge" 0-urile
+    de la inceputul fiecarui octet rezultat si realizeaza concatenarea. Acesti
+    pasi se realizeaza pana cand sa da de caracterul '\0'.
+
+  Task-ul 5
+    Precum la task-urile anterioare, si la acest task se determina adresa de 
+    inceput al string-ului. De asemenea, se aloca memorie pe stiva pentru 
+    variabila care o sa retina valoarea cheii de criptare. 
+    
+    Functia bruteforce_singlebyte_xor(char *str, char *key_addr) va decripta
+    textul prin fiecare cheie posibila si va cauta daca se afla cuvantul 
+    "force" in interiorul sau; alftel se cripteaza la loc (adica se revine
+    la string-ul initial) si se testeaza alta cheie. In final se returneaza
+    prin efect lateral valoarea cheii gasite.
+
+    Functia strfind(*src, *dst) cauta in string-ul sursa daca se regaseste 
+    destinatia. Daca da, se returneaza 1; in caz contrar se returneaza 
+    valoarea 0. Aceasta functioneaza astfel: Se cauta prima litera din 
+    destinatie in sursa. Daca s-a gasit atunci se compara si celelalte litere.
+    Daca se ajunge la finalul destinatiei (adica la caracterul '\0') atunci
+    inseamna ca s-a gasit cuvantul cautat si se returneaza 1. In celalalt caz,
+    se continua cautarea. Daca nu se gaseste destinatia in sursa, atunci se 
+    returneaza 0. De asemenea, aceasta functie a fost gandita sa fie folosita
+    oriunde, prin urmare salveaza valorile registrelor modificate, mai putin
+    registrul prin care se returneaza o valoare (eax).
+
+  Task-ul 6
+    Pentru rezolvarea acestui task, a fost determinata adresa de inceput a 
+    string-ului criptat, s-a alocat memorie pentru tabalul de substitutie
+    si pentru adresa tabelului (tabelul se afla in [ebp - 2368], iar 
+    adresa sa este retinuta in [ebp - 2372]). Pentru aceast task, functia este
+    break_substitution(char *addr_str, char *subst_table). Aceasta are deja
+    calculata tabela de substitutie (detalii despre cum a fost calculata se 
+    regasesc mai jos) si realizeaza substitutia caracterelor conform acestei
+    tabele.
+
+    Functia substitute_letter(char *addr_char, char *substitution_table) 
+    cauta litera data ca parametru in tabela de substitutie si o inlocuieste
+    cu valoarea asociata. De asemenea functia salveaza registrii modificati.
+
+    Modul de deducere al tabelei de substitutie
+    Pentru deducerea acestei tabele, recunosc, am folosit uneltele din bash si
+    nu am facut programul in assembly (cei drept nu era deloc greu, dar era
+    mai mult de scris si lua mult mai mult timp). Am afisat prima oara textul 
+    criptat pe ecran (la prima rulare a acestui task) si l-am luat si l-am pus 
+    intr-un fisier (pe care l-am numit encrypted). Am scris un scurt script 
+    care calculeaza frecventa caracterelor din acel fisier. Scriptul este 
+    urmatorul: 
+            #!/bin/bash
+
+            FILE="encrypted"
+
+            for i in {a..z}; do
+                echo "$i = $(fgrep -o $i $FILE | wc -l)"
+            done
+
+            echo ". = $(fgrep -o '.' $FILE | wc -l)"
+            echo "  = $(fgrep -o ' ' $FILE | wc -l)"
+    
+    In assembly ar fi trebuit sa fac mai intai o functie care numara aparitia
+    unui caracter intr-un string (parcurgerea string-ului pana la '\0' si 
+    de fiecare data cand se intalnea caracterul cautat incrementam eax; iar la 
+    final returnam rezultatul), iar apoi acea functie sa o apelez intr-o 
+    bucla prin care trec prin toate literele alfabelului (luand caracterele in 
+    ordinea din tabelul ASCII, de exemplu de la 'a' la 'z') plus si pentru 
+    caracterele spatiu si punct. Oricum codul pe care l-as fi scris ar fi fost
+    dead code, intrucat in output nu apare.
+
+    Dupa ce am determinat frecventa caracterelor, am inlocuit cel mai frecvent 
+    caracter cu spatiu, urmatorul cu 'e' si asa mai departe, pana cand am 
+    inceput sa observ niste pattern-uri de cuvine (de exemplu THE, IS, etc) si 
+    apoi am dedus si celelalte litere. Acestea le-am pus in tabela de 
+    substitutie.
